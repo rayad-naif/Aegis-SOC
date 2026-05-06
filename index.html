@@ -3,163 +3,215 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aegis-SOC | Enterprise Security Dashboard</title>
+    <title>Aegis-SOC | Tactical Reconnaissance Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #050505; color: #d1d5db; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .terminal { font-family: 'Fira Code', monospace; background: #000; }
-        .glow-blue { color: #3b82f6; text-shadow: 0 0 10px rgba(59, 130, 246, 0.5); }
-        .tab-active { border-bottom: 2px solid #3b82f6; color: #3b82f6; background: rgba(59, 130, 246, 0.08); }
-        .glass-panel { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(75, 85, 99, 0.3); }
-        .log-entry { animation: fadeIn 0.2s ease-out; border-left: 2px solid #1f2937; padding-left: 8px; margin-bottom: 4px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
-        nav button { cursor: pointer; transition: all 0.2s; border-right: 1px solid #1f2937; position: relative; z-index: 10; }
-        nav button:hover { background: rgba(255,255,255,0.05); }
-        .scan-line { width: 100%; height: 2px; background: linear-gradient(90deg, transparent, #3b82f6, transparent); position: absolute; animation: scanAnim 2s linear infinite; z-index: 5; }
-        @keyframes scanAnim { 0% { top: 0; } 100% { top: 100%; } }
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;700;900&display=swap');
+        
+        body { 
+            background-color: #050505; 
+            color: #d1d5db; 
+            font-family: 'Inter', sans-serif;
+        }
+        .terminal { 
+            font-family: 'JetBrains Mono', monospace; 
+            background: rgba(0, 0, 0, 0.9);
+        }
+        .glass-panel { 
+            background: rgba(17, 24, 39, 0.7); 
+            backdrop-filter: blur(12px); 
+            border: 1px solid rgba(75, 85, 99, 0.2); 
+        }
+        .scan-glow {
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.15);
+        }
+        @keyframes pulse-soft {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .status-pulse { animation: pulse-soft 2s infinite; }
+        
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 10px; }
     </style>
 </head>
 <body class="p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
-        <!-- Header -->
-        <header class="flex justify-between items-center mb-8 border-b border-gray-800 pb-6">
+        <!-- Header Section -->
+        <header class="mb-8 flex flex-col md:flex-row justify-between items-start md:items-center border-b border-gray-800 pb-6">
             <div>
-                <h1 class="text-4xl font-black text-white glow-blue italic">AEGIS-SOC</h1>
-                <p class="text-[10px] text-gray-600 uppercase tracking-[0.3em]">Advanced Infrastructure Audit Engine</p>
+                <h1 class="text-3xl font-black text-white italic tracking-tighter uppercase">AEGIS-SOC <span class="text-blue-500 text-xs not-italic font-bold tracking-[0.3em] ml-2">TACTICAL RECON ENGINE</span></h1>
+                <p class="text-gray-500 text-[10px] mt-1 uppercase tracking-widest">Offensive Security Analysis & Attack Surface Mapping</p>
             </div>
-            <div id="userProfile" class="hidden text-right">
-                <div class="text-blue-400 font-bold text-sm" id="profName">--</div>
-                <div class="text-[9px] text-gray-500 uppercase" id="profRole">--</div>
+            <div class="mt-4 md:mt-0 flex items-center space-x-6">
+                <div class="text-right">
+                    <span class="text-[9px] text-gray-500 uppercase block">Node Status</span>
+                    <span class="text-green-500 font-bold text-[11px] status-pulse flex items-center justify-end">
+                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span> ENGINE ONLINE
+                    </span>
+                </div>
             </div>
         </header>
 
-        <div class="grid grid-cols-12 gap-6">
-            <!-- Sidebar -->
-            <div class="col-span-12 lg:col-span-3 space-y-6">
-                <div class="glass-panel p-6 rounded-xl relative overflow-hidden">
-                    <div id="scannerLine" class="scan-line hidden"></div>
-                    <h2 class="text-white font-bold mb-4 flex items-center gap-2 text-xs uppercase">Command Center</h2>
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Sidebar: Command Center -->
+            <div class="lg:col-span-3 space-y-6">
+                <div class="glass-panel p-5 rounded-2xl scan-glow">
+                    <h2 class="text-[10px] font-bold text-blue-400 mb-5 uppercase tracking-[0.2em]">Target Engagement</h2>
                     <div class="space-y-4">
                         <div>
-                            <label class="text-[10px] text-gray-500 uppercase mb-1 block">Target Domain</label>
-                            <input id="target" type="text" placeholder="google.com" class="w-full bg-black border border-gray-800 rounded p-2.5 text-sm focus:border-blue-500 outline-none terminal">
+                            <label class="text-[9px] text-gray-500 uppercase mb-1.5 block font-bold">Target Asset</label>
+                            <input id="target" type="text" placeholder="google.com" 
+                                class="w-full bg-black border border-gray-800 rounded-lg p-2.5 text-xs terminal text-white outline-none focus:border-blue-500 transition-all">
                         </div>
                         <div>
-                            <label class="text-[10px] text-gray-500 uppercase mb-1 block">Authorization Token</label>
-                            <input id="token" type="password" placeholder="LoA Token" class="w-full bg-black border border-gray-800 rounded p-2.5 text-sm focus:border-blue-500 outline-none terminal">
+                            <label class="text-[9px] text-gray-500 uppercase mb-1.5 block font-bold">Auth Token</label>
+                            <input id="token" type="password" placeholder="AUTH-MASTER-..." 
+                                class="w-full bg-black border border-gray-800 rounded-lg p-2.5 text-xs terminal text-white outline-none focus:border-blue-500 transition-all">
                         </div>
-                        <button onclick="executeScan()" id="actionBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded text-xs shadow-lg transition-all">
-                            RUN LIVE AUDIT
+                        <button onclick="startAudit()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-black py-3 rounded-xl text-[10px] uppercase tracking-widest transition-all transform active:scale-95">
+                            Initiate Audit
                         </button>
                     </div>
                 </div>
 
-                <div class="glass-panel p-6 rounded-xl">
-                    <h3 class="text-[10px] text-gray-500 uppercase font-bold mb-4 tracking-widest text-center">Threat Risk Analysis</h3>
-                    <div class="space-y-2">
-                        <div class="flex justify-between items-end"><span class="text-xs text-gray-400">Threat Index</span> <span id="riskScore" class="text-xl font-bold">0.0</span></div>
-                        <div class="w-full bg-gray-900 h-1.5 rounded-full overflow-hidden"><div id="riskBar" class="h-full bg-blue-500 transition-all duration-1000" style="width: 0%"></div></div>
+                <!-- Threat Gauge -->
+                <div class="glass-panel p-6 rounded-2xl text-center">
+                    <div id="riskDisplay" class="text-6xl font-black text-gray-800 transition-colors duration-700">0.0</div>
+                    <div class="text-[9px] text-gray-500 uppercase tracking-widest mt-2">Aggregated Threat Level</div>
+                    <div class="mt-4 w-full bg-gray-900 h-1 rounded-full overflow-hidden">
+                        <div id="riskBar" class="h-full bg-blue-500 transition-all duration-1000 w-0"></div>
                     </div>
-                    <div class="mt-4 text-center">
-                        <span id="threatLevel" class="text-[10px] font-bold uppercase py-1 px-3 rounded-full bg-gray-800 text-gray-500">Awaiting Target</span>
+                </div>
+
+                <!-- Operator Identity -->
+                <div id="operatorCard" class="hidden glass-panel p-5 rounded-2xl border-l-4 border-blue-500">
+                    <p class="text-[9px] text-gray-500 uppercase font-bold mb-1">Authenticated Operator</p>
+                    <p id="resUser" class="text-sm font-black text-white italic">--</p>
+                    <p id="resRole" class="text-[10px] text-blue-400 uppercase tracking-tighter mt-1">--</p>
+                    <div class="mt-3 flex items-center">
+                        <span class="text-[9px] bg-blue-900/40 text-blue-300 px-2 py-0.5 rounded border border-blue-700">LEVEL <span id="resLevel">0</span></span>
                     </div>
                 </div>
             </div>
 
-            <!-- Tabs Area -->
-            <div class="col-span-12 lg:col-span-9 flex flex-col h-[650px]">
-                <nav class="flex border-b border-gray-800 bg-gray-900/20 rounded-t-xl overflow-x-auto">
-                    <button onclick="switchTab('overview')" id="tab-overview" class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500 tab-active">Overview</button>
-                    <button onclick="switchTab('network')" id="tab-network" class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">Network Discovery</button>
-                    <button onclick="switchTab('security')" id="tab-security" class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">Security Audit</button>
-                    <button onclick="switchTab('infrastructure')" id="tab-infrastructure" class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">Infrastructure</button>
-                    <button onclick="switchTab('logs')" id="tab-logs" class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500 flex items-center gap-2">Logs <span id="logBadge" class="hidden bg-blue-600 text-[8px] px-1.5 rounded-full text-white">0</span></button>
-                </nav>
+            <!-- Main Panel: Deep Telemetry -->
+            <div class="lg:col-span-9 space-y-6">
+                <div id="welcomeState" class="glass-panel p-12 rounded-2xl h-[600px] flex flex-col items-center justify-center text-center">
+                    <div class="w-16 h-16 rounded-full border border-gray-800 flex items-center justify-center mb-6 opacity-40">
+                        <svg class="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A10.003 10.003 0 0012 3m0 0a10.003 10.003 0 014.139 1.541l.054.09A10.003 10.003 0 0114.753 20.571m-10.313-2.04l-.054-.09A10.003 10.003 0 013 11V7a4 4 0 014-4h4m10 0h-4m-6 0H7m13 4v4m0 0l-1.5-1.5M20 11l-1.5 1.5"></path></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-white mb-2 uppercase tracking-tighter">Awaiting Engagement</h3>
+                    <p class="text-gray-500 text-xs max-w-xs leading-relaxed">Provide target credentials to initiate deep-packet heuristics and protocol auditing.</p>
+                </div>
 
-                <div class="flex-1 glass-panel p-6 overflow-y-auto rounded-b-xl border-t-0 relative">
-                    <!-- Overview -->
-                    <div id="content-overview" class="tab-content space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="p-4 border border-gray-800 rounded-lg bg-black/40">
-                                <h4 class="text-[9px] text-blue-400 uppercase font-bold mb-3">Identity</h4>
-                                <div class="text-sm space-y-1">
-                                    <div class="flex justify-between"><span>Hostname:</span> <span id="out-host" class="text-white">--</span></div>
-                                    <div class="flex justify-between"><span>IP Address:</span> <span id="out-ip" class="terminal text-xs text-blue-300">--</span></div>
-                                </div>
+                <div id="resultState" class="hidden space-y-6">
+                    <!-- Target Meta Header -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="glass-panel p-5 rounded-2xl md:col-span-2 flex justify-between items-center">
+                            <div>
+                                <h3 id="resTarget" class="text-3xl font-black text-white tracking-tighter uppercase italic">--</h3>
+                                <p id="resIp" class="text-blue-500 terminal text-xs mt-1">--</p>
                             </div>
-                            <div class="p-4 border border-gray-800 rounded-lg bg-black/40">
-                                <h4 class="text-[9px] text-blue-400 uppercase font-bold mb-3">Environment</h4>
-                                <div class="text-sm space-y-1">
-                                    <div class="flex justify-between"><span>OS Predicted:</span> <span id="out-os" class="text-white">--</span></div>
-                                    <div class="flex justify-between"><span>Tech Stack:</span> <span id="out-tech" class="text-yellow-500">--</span></div>
-                                </div>
+                            <div class="text-right">
+                                <span class="text-[9px] text-gray-500 uppercase block mb-1">Target Environment</span>
+                                <span id="resOs" class="text-xs font-bold text-white bg-gray-800 px-3 py-1 rounded">--</span>
                             </div>
                         </div>
-                        <div class="p-4 border border-gray-800 rounded bg-blue-900/5">
-                            <h4 class="text-[9px] text-gray-400 uppercase font-bold mb-2">Executive Audit Summary</h4>
-                            <p id="out-summary" class="text-xs text-gray-400 leading-relaxed italic">System ready. Provide target and authorization token to proceed with deep diagnostic.</p>
+                        <div class="glass-panel p-5 rounded-2xl flex flex-col justify-center text-center">
+                            <span class="text-[9px] text-gray-500 uppercase block mb-1 font-bold">Hardening Grade</span>
+                            <div id="resHardening" class="text-2xl font-black text-white">0</div>
+                            <span class="text-[9px] text-gray-400 mt-1 uppercase">Infrastructure Rating</span>
                         </div>
                     </div>
 
-                    <!-- Network -->
-                    <div id="content-network" class="tab-content hidden">
-                        <table class="w-full text-left text-xs">
-                            <thead class="text-gray-500 uppercase border-b border-gray-800"><tr class="text-[10px]"><th class="p-3">Port</th><th class="p-3">Status</th><th class="p-3">Service Fingerprint</th></tr></thead>
-                            <tbody id="net-table"><tr><td colspan="3" class="p-10 text-center text-gray-600 italic">No data discovered. Run live audit.</td></tr></tbody>
-                        </table>
-                    </div>
-
-                    <!-- Security -->
-                    <div id="content-security" class="tab-content hidden space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="p-4 border border-gray-800 rounded-lg bg-black/40">
-                                <h4 class="text-[9px] text-blue-400 font-bold uppercase mb-4">SSL/TLS Integrity Audit</h4>
-                                <div class="space-y-3 text-xs">
-                                    <div class="flex justify-between"><span>Status:</span> <span id="ssl-status">--</span></div>
-                                    <div class="flex justify-between"><span>Protocol:</span> <span id="ssl-proto">--</span></div>
-                                    <div class="flex justify-between"><span>Cipher:</span> <span id="ssl-cipher" class="text-[9px] text-gray-500 italic">--</span></div>
+                    <!-- Discovery Grid -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <!-- SSL Cryptography -->
+                        <div class="glass-panel p-5 rounded-2xl">
+                            <h4 class="text-[10px] font-bold text-gray-500 uppercase mb-4 flex items-center border-b border-gray-800 pb-2">
+                                <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"></path></svg>
+                                Cryptographic Audit
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-[11px]">
+                                    <span class="text-gray-500">Protocol</span>
+                                    <span id="resSslProto" class="text-white font-bold">--</span>
+                                </div>
+                                <div class="flex justify-between text-[11px]">
+                                    <span class="text-gray-500">Status</span>
+                                    <span id="resSslStatus" class="text-green-500 font-bold uppercase">--</span>
+                                </div>
+                                <div class="text-[10px] bg-black/50 p-2 rounded terminal text-blue-400 break-all" id="resSslCipher">
+                                    --
                                 </div>
                             </div>
-                            <div class="p-4 border border-gray-800 rounded-lg bg-black/40">
-                                <h4 class="text-[9px] text-blue-400 font-bold uppercase mb-4">Security Headers</h4>
-                                <div id="header-list" class="space-y-2 text-[10px]">
-                                    <p class="text-gray-700 italic">Audit results pending...</p>
+                        </div>
+
+                        <!-- Web Infra Analysis -->
+                        <div class="glass-panel p-5 rounded-2xl">
+                            <h4 class="text-[10px] font-bold text-gray-500 uppercase mb-4 flex items-center border-b border-gray-800 pb-2">
+                                <svg class="w-3 h-3 mr-2 text-blue-500" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"></path></svg>
+                                Infrastructure Stack
+                            </h4>
+                            <div class="space-y-3">
+                                <div class="flex justify-between text-[11px]">
+                                    <span class="text-gray-500">Service Tech</span>
+                                    <span id="resWebTech" class="text-white font-bold">--</span>
                                 </div>
+                                <div class="flex justify-between text-[11px]">
+                                    <span class="text-gray-500">Defense/WAF</span>
+                                    <span id="resWebWaf" class="text-yellow-500 font-bold">--</span>
+                                </div>
+                                <div class="flex justify-between text-[11px]">
+                                    <span class="text-gray-500">Host Type</span>
+                                    <span id="resHostType" class="text-blue-400 font-bold uppercase">Remote Node</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Vulnerability Indicators (EXPANDED) -->
+                        <div class="glass-panel p-5 rounded-2xl">
+                            <h4 class="text-[10px] font-bold text-gray-500 uppercase mb-4 flex items-center border-b border-gray-800 pb-2">
+                                <svg class="w-3 h-3 mr-2 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                                Vulnerability Surface
+                            </h4>
+                            <div id="resInsights" class="space-y-2 max-h-32 overflow-y-auto pr-2">
+                                <p class="text-[10px] text-gray-600 italic">No exploits identified.</p>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Infrastructure -->
-                    <div id="content-infrastructure" class="tab-content hidden space-y-6">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="p-6 border border-gray-800 rounded-lg bg-black/40">
-                                <h4 class="text-[9px] text-blue-400 font-bold mb-4 uppercase">Host Image Integrity (OCI)</h4>
-                                <div class="space-y-2 text-xs">
-                                    <div class="flex justify-between"><span>Firewall:</span> <span id="view-img-fw" class="font-bold">--</span></div>
-                                    <div class="flex justify-between"><span>Root Access:</span> <span id="view-img-root" class="font-bold">--</span></div>
-                                    <div class="mt-4">
-                                        <div class="text-[9px] text-gray-500 mb-1 uppercase">Hardening Score</div>
-                                        <div class="w-full bg-gray-800 h-1 rounded-full"><div id="img-score-bar" class="h-full bg-green-500" style="width: 0%"></div></div>
-                                    </div>
-                                </div>
+                    <!-- Attack Surface: Expanded Port Mapping -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="glass-panel p-5 rounded-2xl">
+                            <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-2">
+                                <h4 class="text-[10px] font-bold text-gray-500 uppercase italic">Reconnaissance Table</h4>
+                                <span class="text-[9px] text-blue-500 terminal uppercase">Multi-Threaded Engine: C++ Core</span>
                             </div>
-                            <div class="p-6 border border-gray-800 rounded-lg bg-black/40">
-                                <h4 class="text-[9px] text-blue-400 font-bold mb-4 uppercase">Environment Prediction</h4>
-                                <div id="infra-os" class="text-2xl font-black text-white">--</div>
-                                <p class="text-[9px] text-gray-500 mt-2">Target OS via TTL Analysis</p>
+                            <div class="overflow-y-auto max-h-72 rounded-lg border border-gray-800">
+                                <table class="w-full text-left text-[11px] terminal">
+                                    <thead class="bg-gray-900 text-gray-500 sticky top-0">
+                                        <tr>
+                                            <th class="p-3">PORT</th>
+                                            <th class="p-3">STATUS</th>
+                                            <th class="p-3">ATTACK VECTOR / SERVICE</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="resPorts" class="divide-y divide-gray-800 bg-black/40">
+                                        <!-- Dynamic rows for all 20+ ports -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
-                        <div class="p-6 border border-gray-800 rounded-lg bg-gradient-to-br from-gray-900/50 to-black">
-                            <h4 class="text-[9px] text-blue-400 font-bold uppercase mb-4">WAF / Cloud Detection</h4>
-                            <div id="infra-waf" class="text-xl font-bold text-yellow-500">--</div>
-                        </div>
-                    </div>
 
-                    <!-- Logs -->
-                    <div id="content-logs" class="tab-content hidden h-full">
-                        <div id="log-box" class="h-full overflow-y-auto terminal text-[10px] text-gray-400 space-y-1 p-2">
-                            <p class="text-gray-700 italic"># Console initialized. Ready for Cloud-to-Remote bridge...</p>
+                        <!-- Real-time Orchestrator Console -->
+                        <div class="glass-panel p-5 rounded-2xl flex flex-col">
+                            <h4 class="text-[10px] font-bold text-gray-500 uppercase mb-4 border-b border-gray-800 pb-2 italic">Operation Audit Trail</h4>
+                            <div id="console" class="flex-grow terminal text-[10px] p-4 rounded-lg bg-black/80 h-48 overflow-y-auto space-y-1 text-green-500 border border-gray-800 shadow-inner">
+                                <div class="opacity-40">> [BOOT] Orchestrator v1.4 Initialized...</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -168,149 +220,161 @@
     </div>
 
     <script>
-        const API = "http://129.154.251.3:5000"; 
-        let logQueue = 0;
-
-        const SIM_REGISTRY = {
-            "AUTH-MASTER-ROOT-ADMIN-99X-GLOBAL": { name: "Root Administrator", role: "Global Sec-Ops", level: 4 },
-            "AUTH-STUDENT-LAB-TEST": { name: "Cyber-Sec Student", role: "Sandbox Testing", level: 1 },
-            "AUTH-UNIV-AUDITOR-2024": { name: "Security Auditor", role: "Compliance Review", level: 3 }
+        // Tactical Port Reference Mapping
+        const PORT_VECTORS = {
+            20: "FTP Data Transfer",
+            21: "FTP Control Interface",
+            22: "SSH Remote Management",
+            23: "Telnet (Unencrypted)",
+            25: "SMTP Mail Gateway",
+            53: "DNS Name Resolution",
+            80: "HTTP Web Portal",
+            110: "POP3 Mail Storage",
+            143: "IMAP Mail Interface",
+            443: "HTTPS Secure Gateway",
+            445: "SMB Network Share",
+            1433: "MS-SQL Database Core",
+            1521: "Oracle Database Entry",
+            2049: "NFS Network Storage",
+            3306: "MySQL Database Core",
+            3389: "RDP Remote Desktop",
+            5432: "PostgreSQL Database",
+            6379: "Redis Memory Cache",
+            8080: "Alternative HTTP Host",
+            27017: "MongoDB Database"
         };
 
-        function switchTab(t) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-            document.querySelectorAll('nav button').forEach(b => b.classList.remove('tab-active'));
-            document.getElementById(`content-${t}`).classList.remove('hidden');
-            document.getElementById(`tab-${t}`).classList.add('tab-active');
-            if(t === 'logs') { 
-                logQueue = 0; 
-                document.getElementById('logBadge').classList.add('hidden'); 
-            }
-        }
+        // Tactical Vulnerability Risk Mapping
+        const VULN_RISKS = {
+            'CSP': "Critical: Cross-Site Scripting (XSS) vulnerable. No script restrictions.",
+            'HSTS': "Critical: Man-In-The-Middle (MITM). Protocol downgrade possible.",
+            'X-Frame-Options': "Insecure: Clickjacking entry. Site can be framed.",
+            'X-Content-Type-Options': "Insecure: MIME-sniffing vulnerability.",
+            'Referrer-Policy': "Warning: Information leak via referrer headers.",
+            'Permissions-Policy': "Warning: Unrestricted hardware/feature access.",
+            'X-XSS-Protection': "Insecure: Legacy XSS filter disabled.",
+            'Expect-CT': "Warning: Certificate Transparency not enforced."
+        };
 
-        function addLog(msg, color = "text-gray-500") {
-            const box = document.getElementById('log-box');
-            const p = document.createElement('p');
-            p.className = `log-entry ${color}`;
-            p.innerHTML = `<span class="text-gray-800">[${new Date().toLocaleTimeString()}]</span> $ ${msg}`;
-            box.appendChild(p);
-            box.scrollTop = box.scrollHeight;
-            if(document.getElementById('content-logs').classList.contains('hidden')) {
-                logQueue++;
-                const badge = document.getElementById('logBadge');
-                badge.innerText = logQueue;
-                badge.classList.remove('hidden');
-            }
-        }
-
-        async function executeScan() {
-            const target = document.getElementById('target').value;
+        async function startAudit() {
+            const targetInput = document.getElementById('target').value;
             const token = document.getElementById('token').value;
-            if(!target || !token) { alert("Authorization Token and Target required."); return; }
+            const logBox = document.getElementById('console');
 
-            document.getElementById('actionBtn').disabled = true;
-            document.getElementById('actionBtn').innerText = "AUDITING...";
-            document.getElementById('scannerLine').classList.remove('hidden');
-            
-            addLog(`Requesting session for asset: ${target}`, "text-blue-400");
-            addLog("Authenticating LoA signature...", "text-gray-500");
+            if (!targetInput || !token) {
+                alert("Critical: Target Asset and HMAC Token required.");
+                return;
+            }
+
+            document.getElementById('welcomeState').classList.add('hidden');
+            document.getElementById('resultState').classList.remove('hidden');
+            document.getElementById('operatorCard').classList.remove('hidden');
+            logBox.innerHTML = '<div class="text-blue-400 font-bold">> [SYS] AEGIS-SOC HANDSHAKE INITIATED...</div>';
 
             try {
-                const res = await fetch(`${API}/scan`, {
+                const apiUrl = "/scan";
+                logBox.innerHTML += `<div>> [NET] ENGAGING API ENDPOINT: ${apiUrl}</div>`;
+                
+                const response = await fetch(apiUrl, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({target, token}),
-                    signal: AbortSignal.timeout(5000)
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ target: targetInput, token: token })
                 });
-                const data = await res.json();
-                processResults(data);
-            } catch (err) {
-                addLog("Backend offline. Initializing Cloud-Sim Logic...", "text-yellow-500");
-                const identity = SIM_REGISTRY[token] || { name: "Guest Auditor", role: "Access Denied", level: 0 };
-                if (identity.level === 0) {
-                    addLog("DENIED: Invalid Token provided.", "text-red-500");
-                } else {
-                    await new Promise(r => setTimeout(r, 1200));
-                    processResults({
-                        operator: identity.name, role: identity.role, level: identity.level,
-                        target: target, ip: "115.186.129.42", os: "Linux 5.x (OCI)", risk_score: 3.4,
-                        web_audit: { server_tech: "Nginx/1.24", waf_detected: "OCI-WAF", security_headers: [{header: "csp", status: "SECURE"}, {header: "x-frame-options", status: "MISSING"}] },
-                        ssl_audit: { status: "Secure", protocol: "TLS 1.3", cipher: "AES-256-GCM" },
-                        results: [{port: 80, status: "OPEN"}, {port: 443, status: "OPEN"}, {port: 22, status: "CLOSED"}],
-                        image_security: { firewall: "ACTIVE", root_status: "DISABLED", hardening_score: 95 }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    logBox.innerHTML += `<div class="text-red-500 font-bold">> [ERR] ORCHESTRATION_FAIL: ${data.error}</div>`;
+                    return;
+                }
+
+                logBox.innerHTML += `<div>> [AUTH] SESSION GRANTED: ${data.operator}</div>`;
+                logBox.innerHTML += `<div>> [DNS] RESOLVED TARGET ASSET: ${data.ip}</div>`;
+                logBox.innerHTML += `<div>> [ENV] FINGERPRINT RESULT: ${data.os}</div>`;
+                logBox.innerHTML += `<div>> [CORE] ENGAGING MULTI-THREADED C++ PORT DISCOVERY...</div>`;
+
+                // Update Header Info
+                document.getElementById('resTarget').innerText = data.target.toUpperCase();
+                document.getElementById('resIp').innerText = data.ip;
+                document.getElementById('resOs').innerText = data.os;
+                document.getElementById('resHardening').innerText = data.image_security?.hardening_score || "0";
+
+                // Identity info
+                document.getElementById('resUser').innerText = data.operator;
+                document.getElementById('resRole').innerText = data.role.toUpperCase();
+                document.getElementById('resLevel').innerText = data.level;
+
+                // SSL info
+                document.getElementById('resSslProto').innerText = data.ssl_audit?.protocol || "N/A";
+                document.getElementById('resSslStatus').innerText = data.ssl_audit?.status || "Unknown";
+                document.getElementById('resSslCipher').innerText = data.ssl_audit?.cipher || "No Cipher Info";
+
+                // Infrastructure info
+                document.getElementById('resWebTech').innerText = data.web_audit?.server_tech || "Detection Shielded";
+                document.getElementById('resWebWaf').innerText = data.web_audit?.waf_detected || "Cloud-Hidden";
+
+                // PROCESS VULNERABILITY INSIGHTS
+                const insightBox = document.getElementById('resInsights');
+                insightBox.innerHTML = '';
+                let insightsFound = 0;
+
+                if (data.web_audit?.security_headers) {
+                    data.web_audit.security_headers.forEach(h => {
+                        if (h.status === 'MISSING' && VULN_RISKS[h.header]) {
+                            insightBox.innerHTML += `
+                                <div class="bg-red-900/20 border-l-2 border-red-500 p-2 text-[9px] mb-1">
+                                    <p class="font-bold text-red-400">${h.header} Missing</p>
+                                    <p class="text-gray-400">${VULN_RISKS[h.header]}</p>
+                                </div>
+                            `;
+                            insightsFound++;
+                        }
                     });
                 }
-            } finally {
-                document.getElementById('actionBtn').disabled = false;
-                document.getElementById('actionBtn').innerText = "RUN LIVE AUDIT";
-                document.getElementById('scannerLine').classList.add('hidden');
+                if (insightsFound === 0) insightBox.innerHTML = '<p class="text-[10px] text-green-500 italic">No critical protocol vulnerabilities mapped.</p>';
+
+                // RENDER ATTACK SURFACE (All 20+ Ports)
+                const portBody = document.getElementById('resPorts');
+                portBody.innerHTML = '';
+                if (data.results?.length > 0) {
+                    data.results.forEach(p => {
+                        const vector = PORT_VECTORS[p.port] || "Unidentified Service Node";
+                        portBody.innerHTML += `
+                            <tr class="hover:bg-gray-800/50 transition-colors">
+                                <td class="p-3 text-blue-400 font-bold">${p.port}</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded ${p.status === 'OPEN' ? 'bg-green-900/30 text-green-500' : 'bg-red-900/30 text-red-500'} uppercase font-bold text-[9px]">${p.status}</span></td>
+                                <td class="p-3 text-gray-400 uppercase text-[9px]">${vector}</td>
+                            </tr>
+                        `;
+                    });
+                }
+
+                // Risk Score Logic
+                const score = parseFloat(data.risk_score).toFixed(1);
+                const riskDisplay = document.getElementById('riskDisplay');
+                riskDisplay.innerText = score;
+                document.getElementById('riskBar').style.width = (score * 10) + "%";
+
+                if (score > 7) {
+                    riskDisplay.className = "text-6xl font-black text-red-500";
+                    document.getElementById('riskBar').className = "h-full bg-red-500 transition-all duration-1000";
+                } else if (score > 4) {
+                    riskDisplay.className = "text-6xl font-black text-yellow-500";
+                    document.getElementById('riskBar').className = "h-full bg-yellow-500 transition-all duration-1000";
+                } else {
+                    riskDisplay.className = "text-6xl font-black text-blue-500";
+                    document.getElementById('riskBar').className = "h-full bg-blue-500 transition-all duration-1000";
+                }
+
+                logBox.innerHTML += `<div>> [CPP] MULTI-THREADED DISCOVERY COMPLETE. 20+ NODES ANALYZED.</div>`;
+                logBox.innerHTML += `<div>> [AUDIT] RISK INDEX FINALIZED: ${score}</div>`;
+                logBox.innerHTML += `<div class="text-green-400 font-bold">> [SYS] RECONNAISSANCE LIFECYCLE FINISHED.</div>`;
+
+                logBox.scrollTop = logBox.scrollHeight;
+
+            } catch (err) {
+                logBox.innerHTML += `<div class="text-red-500 font-bold">> [CRITICAL] ORCHESTRATOR OFFLINE. CHECK PORT 5000.</div>`;
             }
-        }
-
-        function processResults(data) {
-            addLog(`Identity Confirmed: ${data.operator}`, "text-green-500");
-            addLog(`Threat Analysis Score: ${data.risk_score}`, "text-yellow-500");
-            
-            // Header UI
-            document.getElementById('userProfile').classList.remove('hidden');
-            document.getElementById('profName').innerText = data.operator;
-            document.getElementById('profRole').innerText = `${data.role} [Lv.${data.level}]`;
-            
-            // Overview UI
-            document.getElementById('out-host').innerText = data.target;
-            document.getElementById('out-ip').innerText = data.ip;
-            document.getElementById('out-os').innerText = data.os;
-            document.getElementById('out-tech').innerText = data.web_audit.server_tech;
-            
-            // Risk Index
-            const risk = data.risk_score;
-            document.getElementById('riskScore').innerText = risk.toFixed(1);
-            document.getElementById('riskScore').className = `text-xl font-bold ${risk > 5 ? 'text-red-500' : 'text-blue-500'}`;
-            document.getElementById('riskBar').style.width = `${risk * 10}%`;
-            document.getElementById('riskBar').className = `h-full transition-all duration-1000 ${risk > 5 ? 'bg-red-600' : 'bg-blue-600'}`;
-            document.getElementById('threatLevel').innerText = risk > 5 ? "Critical Vulnerability" : "Optimized Infrastructure";
-            document.getElementById('threatLevel').className = `text-[10px] font-bold uppercase py-1 px-3 rounded-full ${risk > 5 ? 'bg-red-900/30 text-red-500' : 'bg-blue-900/30 text-blue-500'}`;
-
-            // Discovery Table
-            const table = document.getElementById('net-table');
-            table.innerHTML = "";
-            data.results.forEach(r => {
-                addLog(`Inquiry: Port ${r.port} is ${r.status}`, r.status === 'OPEN' ? 'text-green-400' : 'text-gray-600');
-                table.innerHTML += `<tr class="border-b border-gray-800/40 hover:bg-white/5 transition-all"><td class="p-3 font-mono">${r.port}</td><td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] ${r.status==='OPEN'?'bg-green-900/30 text-green-500':'bg-red-900/20 text-red-500'}">${r.status}</span></td><td class="p-3 text-gray-500">Service Detected</td></tr>`;
-            });
-
-            // Security Tab
-            document.getElementById('ssl-status').innerText = data.ssl_audit.status;
-            document.getElementById('ssl-status').className = `font-bold ${data.ssl_audit.status === 'Secure' ? 'text-green-500' : 'text-red-500'}`;
-            document.getElementById('ssl-proto').innerText = data.ssl_audit.protocol;
-            document.getElementById('ssl-cipher').innerText = data.ssl_audit.cipher;
-
-            const hList = document.getElementById('header-list');
-            hList.innerHTML = "";
-            if(data.web_audit.security_headers && data.web_audit.security_headers.length > 0) {
-                data.web_audit.security_headers.forEach(h => {
-                    addLog(`Security Check: ${h.header} -> ${h.status}`, h.status === 'SECURE' ? 'text-green-500' : 'text-red-400');
-                    hList.innerHTML += `<div class="flex justify-between p-2.5 border border-gray-800 rounded bg-white/5"><span>${h.header}</span><span class="${h.status==='SECURE'?'text-green-500':'text-red-500'} font-bold uppercase text-[9px]">${h.status}</span></div>`;
-                });
-            } else {
-                hList.innerHTML = `<p class="text-gray-700 italic">No header data available.</p>`;
-            }
-
-            // Infrastructure Tab
-            document.getElementById('infra-os').innerText = data.os;
-            document.getElementById('infra-waf').innerText = data.web_audit.waf_detected;
-
-            // FIX: Image Integrity UI update
-            if (data.image_security) {
-                document.getElementById('view-img-fw').innerText = data.image_security.firewall;
-                document.getElementById('view-img-fw').className = `font-bold ${data.image_security.firewall === 'ACTIVE' ? 'text-green-500' : 'text-red-500'}`;
-                document.getElementById('view-img-root').innerText = data.image_security.root_status;
-                document.getElementById('view-img-root').className = `font-bold ${data.image_security.root_status === 'DISABLED' ? 'text-green-500' : 'text-red-500'}`;
-                document.getElementById('img-score-bar').style.width = data.image_security.hardening_score + '%';
-            }
-
-            document.getElementById('out-summary').innerText = `Diagnostic assessment for ${data.target} finalized. Identified ${data.os}. Threat score ${data.risk_score.toFixed(1)}. Results persisted to encrypted OCI session log.`;
-            addLog("Diagnostic Session Finalized. Bridge Closed.", "text-green-500 font-bold");
         }
     </script>
 </body>

@@ -1,0 +1,38 @@
+2026-05-05 23:43:51,540 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.1.16:5000
+2026-05-05 23:43:51,540 [INFO] [33mPress CTRL+C to quit[0m
+2026-05-05 23:43:55,437 [INFO] 127.0.0.1 - - [05/May/2026 23:43:55] "[33mGET / HTTP/1.1[0m" 404 -
+2026-05-05 23:45:11,494 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.1.16:5000
+2026-05-05 23:45:11,494 [INFO] [33mPress CTRL+C to quit[0m
+2026-05-05 23:45:14,198 [INFO] 127.0.0.1 - - [05/May/2026 23:45:14] "[33mGET / HTTP/1.1[0m" 404 -
+2026-05-05 23:45:15,498 [INFO] 127.0.0.1 - - [05/May/2026 23:45:15] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-05 23:48:35,871 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.1.16:5000
+2026-05-05 23:48:35,871 [INFO] [33mPress CTRL+C to quit[0m
+2026-05-05 23:48:58,159 [INFO] 127.0.0.1 - - [05/May/2026 23:48:58] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-05 23:52:31,871 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.1.16:5000
+2026-05-05 23:52:31,877 [INFO] [33mPress CTRL+C to quit[0m
+2026-05-05 23:52:38,085 [INFO] 127.0.0.1 - - [05/May/2026 23:52:38] "[33mGET / HTTP/1.1[0m" 404 -
+2026-05-05 23:52:38,930 [INFO] 127.0.0.1 - - [05/May/2026 23:52:38] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-05 23:52:43,432 [INFO] 127.0.0.1 - - [05/May/2026 23:52:43] "[33mGET / HTTP/1.1[0m" 404 -
+2026-05-05 23:52:44,639 [INFO] 127.0.0.1 - - [05/May/2026 23:52:44] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-05 23:52:53,851 [INFO] 127.0.0.1 - - [05/May/2026 23:52:53] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-05 23:54:45,674 [INFO] [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:5000
+ * Running on http://10.0.1.16:5000
+2026-05-05 23:54:45,674 [INFO] [33mPress CTRL+C to quit[0m
+2026-05-05 23:55:02,837 [INFO] 127.0.0.1 - - [05/May/2026 23:55:02] "GET / HTTP/1.1" 200 -
+2026-05-05 23:55:03,772 [INFO] 127.0.0.1 - - [05/May/2026 23:55:03] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-05 23:55:04,009 [INFO] 127.0.0.1 - - [05/May/2026 23:55:04] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2026-05-05 23:55:18,955 [INFO] 127.0.0.1 - - [05/May/2026 23:55:18] "POST /scan HTTP/1.1" 200 -
