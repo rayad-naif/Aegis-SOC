@@ -4,13 +4,16 @@ import http.client
 import subprocess
 import platform
 import re
+from urllib.parse import urlparse
+
+# Modern User-Agent to bypass WAF (Cloudflare/Akamai) bot blocks
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
 
 def detect_os(ip):
     """
-    Tactical OS Fingerprinting with Firewall and CDN/WAF Detection.
-    1. Attempts ICMP TTL Analysis (Active).
-    2. Falls back to HTTP Banner Analysis (Passive) if ICMP is blocked.
-    3. Identifies Cloud Infrastructure (Cloudflare, etc.) to explain masking.
+    Tactical OS Fingerprinting with Firewall & CDN detection.
+    1. ICMP TTL Analysis (Active)
+    2. TCP Banner Grabbing (Passive Fallback)
     """
     # Phase 1: ICMP TTL Analysis
     try:
@@ -26,37 +29,26 @@ def detect_os(ip):
     except Exception:
         pass
 
-    # Phase 2: HTTP Banner Grabbing (TCP Fallback)
+    # Phase 2: HTTP Banner Analysis (Passive)
     try:
         conn = http.client.HTTPConnection(ip, timeout=2)
-        conn.request("HEAD", "/")
+        conn.request("HEAD", "/", headers={"User-Agent": USER_AGENT})
         res = conn.getresponse()
-        server_header = res.getheader("Server", "").lower()
+        server = res.getheader("Server", "").lower()
         
-        # Detect Cloud Masking (WAF/CDN)
-        if "cloudflare" in server_header:
-            return "Cloud Infrastructure (Cloudflare WAF)"
-        if any(x in server_header for x in ["akamai", "amazons3", "awselb", "cloudfront"]):
-            return "Cloud Infrastructure (CDN/LB Masked)"
-
-        # Detect OS via specific Banners
-        if any(x in server_header for x in ["ubuntu", "debian", "apache", "nginx"]):
-            return "Linux (via HTTP Banner)"
-        if any(x in server_header for x in ["iis", "microsoft", "win64"]):
-            return "MS Windows (via HTTP Banner)"
-            
-        if server_header:
-            return f"Unknown OS (Header: {server_header})"
-    except Exception:
+        if "cloudflare" in server: return "Cloud Infrastructure (Cloudflare WAF)"
+        if "akamai" in server: return "Cloud Infrastructure (Akamai CDN)"
+        if any(x in server for x in ["iis", "microsoft"]): return "MS Windows (via HTTP Banner)"
+        if any(x in server for x in ["ubuntu", "debian", "nginx", "apache"]): return "Linux (via HTTP Banner)"
+        
+        if server: return f"Unknown OS (Header: {server})"
+    except:
         pass
 
     return "Detection Shielded (Firewall Active)"
 
 def audit_ssl(hostname):
-    """
-    Performs a live TLS handshake to identify protocol versions 
-    and cryptographic cipher suites.
-    """
+    """Performs TLS handshake to identify protocol and cipher suites."""
     try:
         context = ssl.create_default_context()
         with socket.create_connection((hostname, 443), timeout=3) as sock:
@@ -69,14 +61,29 @@ def audit_ssl(hostname):
     except Exception:
         return {"status": "Insecure/Legacy", "protocol": "N/A", "cipher": "None"}
 
-def audit_headers(target):
+def audit_headers(target, path="/", depth=0):
     """
-    Deep Header Audit for 8+ Security Protocols.
+    Deep Header Audit with Redirect Following.
+    Fixes the 'All Headers Missing' issue by following 301/302 redirects
+    and using a realistic User-Agent.
     """
+    if depth > 3: return [] # Prevent redirect loops
+
     try:
-        conn = http.client.HTTPConnection(target, timeout=3)
-        conn.request("HEAD", "/")
+        # Use HTTPS if possible, fallback to HTTP
+        conn = http.client.HTTPSConnection(target, timeout=3)
+        conn.request("GET", path, headers={"User-Agent": USER_AGENT})
         res = conn.getresponse()
+        
+        # Handle Redirects (Fixes missing headers on landing pages)
+        if res.status in [301, 302]:
+            location = res.getheader("Location")
+            if location:
+                parsed = urlparse(location)
+                new_host = parsed.netloc if parsed.netloc else target
+                new_path = parsed.path if parsed.path else "/"
+                return audit_headers(new_host, new_path, depth + 1)
+
         headers = {k.lower(): v for k, v in res.getheaders()}
         
         checks = [
@@ -90,11 +97,14 @@ def audit_headers(target):
             ("expect-ct", "Expect-CT")
         ]
         
-        audit_results = []
-        for h_key, label in checks:
-            status = "SECURE" if h_key in headers else "MISSING"
-            audit_results.append({"header": label, "status": status})
-            
-        return audit_results
+        return [{"header": label, "status": "SECURE" if h_key in headers else "MISSING"} for h_key, label in checks]
     except Exception:
-        return []
+        # Fallback to HTTP if HTTPS fails
+        try:
+            conn = http.client.HTTPConnection(target, timeout=3)
+            conn.request("GET", path, headers={"User-Agent": USER_AGENT})
+            res = conn.getresponse()
+            headers = {k.lower(): v for k, v in res.getheaders()}
+            return [{"header": label, "status": "SECURE" if h_key in headers else "MISSING"} for h_key, label in checks]
+        except:
+            return []
