@@ -7,15 +7,14 @@ import re
 
 def detect_os(ip):
     """
-    Tactical OS Fingerprinting with Firewall Fallback.
+    Tactical OS Fingerprinting with Firewall and CDN/WAF Detection.
     1. Attempts ICMP TTL Analysis (Active).
     2. Falls back to HTTP Banner Analysis (Passive) if ICMP is blocked.
+    3. Identifies Cloud Infrastructure (Cloudflare, etc.) to explain masking.
     """
     # Phase 1: ICMP TTL Analysis
     try:
-        # Determine ping parameter based on local OS
         param = '-n' if platform.system().lower() == 'windows' else '-c'
-        # Send a single probe
         output = subprocess.check_output(['ping', param, '1', ip], stderr=subprocess.STDOUT, timeout=2).decode()
         
         ttl_match = re.search(r"ttl=(\d+)", output.lower())
@@ -25,18 +24,22 @@ def detect_os(ip):
             if ttl <= 128: return f"MS Windows (TTL: {ttl})"
             if ttl <= 255: return f"Network Infrastructure (TTL: {ttl})"
     except Exception:
-        # ICMP Blocked by Firewall - Proceed to Phase 2 (Banner Grabbing)
         pass
 
     # Phase 2: HTTP Banner Grabbing (TCP Fallback)
-    # Firewalls often allow Port 80/443 even if they block Ping.
     try:
-        # Attempt to grab header from port 80
         conn = http.client.HTTPConnection(ip, timeout=2)
         conn.request("HEAD", "/")
         res = conn.getresponse()
         server_header = res.getheader("Server", "").lower()
         
+        # Detect Cloud Masking (WAF/CDN)
+        if "cloudflare" in server_header:
+            return "Cloud Infrastructure (Cloudflare WAF)"
+        if any(x in server_header for x in ["akamai", "amazons3", "awselb", "cloudfront"]):
+            return "Cloud Infrastructure (CDN/LB Masked)"
+
+        # Detect OS via specific Banners
         if any(x in server_header for x in ["ubuntu", "debian", "apache", "nginx"]):
             return "Linux (via HTTP Banner)"
         if any(x in server_header for x in ["iis", "microsoft", "win64"]):
@@ -56,7 +59,6 @@ def audit_ssl(hostname):
     """
     try:
         context = ssl.create_default_context()
-        # Set short timeout for responsive scanning
         with socket.create_connection((hostname, 443), timeout=3) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 return {
@@ -70,7 +72,6 @@ def audit_ssl(hostname):
 def audit_headers(target):
     """
     Deep Header Audit for 8+ Security Protocols.
-    Checks for presence of hardening headers to map vulnerability surface.
     """
     try:
         conn = http.client.HTTPConnection(target, timeout=3)
@@ -96,5 +97,4 @@ def audit_headers(target):
             
         return audit_results
     except Exception:
-        # Return empty list on connection failure
         return []
