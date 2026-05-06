@@ -7,29 +7,47 @@ import re
 
 def detect_os(ip):
     """
-    Tactical OS Fingerprinting via ICMP TTL Analysis.
-    Predicts the target OS based on the Time-To-Live (TTL) value.
-    - Linux/Unix: ~64
-    - Windows: ~128
-    - Network Infrastructure: ~255
+    Tactical OS Fingerprinting with Firewall Fallback.
+    1. Attempts ICMP TTL Analysis (Active).
+    2. Falls back to HTTP Banner Analysis (Passive) if ICMP is blocked.
     """
+    # Phase 1: ICMP TTL Analysis
     try:
-        # Determine ping parameter based on current platform
+        # Determine ping parameter based on local OS
         param = '-n' if platform.system().lower() == 'windows' else '-c'
-        # Execute a single ping to capture the TTL response
+        # Send a single probe
         output = subprocess.check_output(['ping', param, '1', ip], stderr=subprocess.STDOUT, timeout=2).decode()
         
-        # Regex to extract the TTL value
         ttl_match = re.search(r"ttl=(\d+)", output.lower())
         if ttl_match:
             ttl = int(ttl_match.group(1))
             if ttl <= 64: return f"Linux / Unix (TTL: {ttl})"
             if ttl <= 128: return f"MS Windows (TTL: {ttl})"
             if ttl <= 255: return f"Network Infrastructure (TTL: {ttl})"
+    except Exception:
+        # ICMP Blocked by Firewall - Proceed to Phase 2 (Banner Grabbing)
+        pass
+
+    # Phase 2: HTTP Banner Grabbing (TCP Fallback)
+    # Firewalls often allow Port 80/443 even if they block Ping.
+    try:
+        # Attempt to grab header from port 80
+        conn = http.client.HTTPConnection(ip, timeout=2)
+        conn.request("HEAD", "/")
+        res = conn.getresponse()
+        server_header = res.getheader("Server", "").lower()
         
-        return "Unknown OS (Filtered/Shielded)"
-    except:
-        return "Detection Shielded (ICMP Blocked)"
+        if any(x in server_header for x in ["ubuntu", "debian", "apache", "nginx"]):
+            return "Linux (via HTTP Banner)"
+        if any(x in server_header for x in ["iis", "microsoft", "win64"]):
+            return "MS Windows (via HTTP Banner)"
+            
+        if server_header:
+            return f"Unknown OS (Header: {server_header})"
+    except Exception:
+        pass
+
+    return "Detection Shielded (Firewall Active)"
 
 def audit_ssl(hostname):
     """
@@ -38,7 +56,7 @@ def audit_ssl(hostname):
     """
     try:
         context = ssl.create_default_context()
-        # Create a connection to the HTTPS port
+        # Set short timeout for responsive scanning
         with socket.create_connection((hostname, 443), timeout=3) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 return {
@@ -58,10 +76,8 @@ def audit_headers(target):
         conn = http.client.HTTPConnection(target, timeout=3)
         conn.request("HEAD", "/")
         res = conn.getresponse()
-        # Case-insensitive header dictionary
         headers = {k.lower(): v for k, v in res.getheaders()}
         
-        # Comprehensive list of security-critical headers
         checks = [
             ("content-security-policy", "CSP"),
             ("strict-transport-security", "HSTS"),
@@ -80,4 +96,5 @@ def audit_headers(target):
             
         return audit_results
     except Exception:
+        # Return empty list on connection failure
         return []
