@@ -21,81 +21,109 @@ logging.basicConfig(
     handlers=[logging.FileHandler("aegis_access.log"), logging.StreamHandler()]
 )
 
-# Get absolute paths
+# Get absolute paths for flat-root or structured deployment
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
 BACKEND_DIR = os.path.join(BASE_DIR, 'backend')
 
+# Fallback for flat directory structures
+if not os.path.exists(FRONTEND_DIR):
+    FRONTEND_DIR = os.path.dirname(os.path.abspath(__file__))
+if not os.path.exists(BACKEND_DIR):
+    BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+
 app = Flask(__name__, static_folder=FRONTEND_DIR)
 CORS(app)
 
-# RBAC Registry
+# RBAC Registry: Defines access levels and role metadata
 USER_REGISTRY = {
     "AUTH-MASTER-ROOT-ADMIN-99X-GLOBAL": {"name": "Root Administrator", "role": "Global Sec-Ops", "level": 4},
     "AUTH-STUDENT-LAB-TEST": {"name": "Cyber-Sec Student", "role": "Sandbox Testing", "level": 1}
 }
 
 def call_cpp_engine(ip_address):
-    """Bridge to the C++ Tactical Engine"""
+    """Bridge to the C++ Tactical Engine for multi-threaded port discovery"""
     binary = os.path.join(BACKEND_DIR, "aegis_engine")
     if platform.system() == "Windows": binary += ".exe"
     
     if not os.path.exists(binary):
+        logging.warning(f"Engine binary not found at {binary}. Returning default risk.")
         return 5.0
 
     try:
+        # Executes the compiled C++ sentinel and captures its stdout risk score
         result = subprocess.check_output([binary, ip_address], timeout=10)
         return float(result.decode().strip())
-    except:
+    except Exception as e:
+        logging.error(f"C++ Engine Execution Error: {e}")
         return 2.5
 
 @app.route('/')
 def home():
+    """Serves the primary tactical dashboard"""
     return send_from_directory(FRONTEND_DIR, 'index.html')
 
 @app.route('/scan', methods=['POST'])
 def start_scan():
     data = request.json
-    if not data: return jsonify({"error": "No payload"}), 400
+    if not data: return jsonify({"error": "No payload detected"}), 400
         
+    # Sanitize target input to extract hostname only
     target_raw = data.get('target', '')
-    target = target_raw.replace('http://', '').replace('https://', '').split('/')[0]
+    target = target_raw.replace('http://', '').replace('https://', '').split('/')[0].strip()
     token = data.get('token')
     
+    # RBAC Validation Gate
     user = USER_REGISTRY.get(token)
-    if not user: return jsonify({"error": "Unauthorized Access Token"}), 403
+    if not user: 
+        logging.warning(f"Unauthorized access attempt with token: {token}")
+        return jsonify({"error": "Unauthorized Access Token"}), 403
 
     try:
+        # Resolve target hostname to IPv4
         ip = socket.gethostbyname(target)
         
         # --- PHASE 1: FULL DATA COLLECTION ---
         raw_os = security_engine.detect_os(ip)
         raw_ssl = security_engine.audit_ssl(target)
+        
+        # Improved Header Audit: We handle potential connection failures gracefully
         raw_headers = security_engine.audit_headers(target)
+        header_audit_failed = len(raw_headers) == 0
+        
+        # Execute the high-speed C++ reconnaissance core
         raw_risk = call_cpp_engine(ip)
 
-        # Full 20-Port Matrix
+        # Tactical Port Matrix Definition
         tactical_ports = [21, 22, 23, 25, 53, 80, 110, 143, 443, 445, 1433, 1521, 2049, 3306, 3389, 5432, 6379, 8080, 27017]
         
         # --- PHASE 2: RBAC FILTERING LOGIC ---
         is_admin = user['level'] >= 4
         
-        # 1. Port Masking: Students only see 80/443. Admins see the full tactical matrix.
+        # 1. Port Masking Logic
         if is_admin:
             results_matrix = [{"port": p, "status": "OPEN" if p in [80, 443] else "CLOSED"} for p in tactical_ports]
         else:
+            # Students are restricted to common web ports only
             results_matrix = [{"port": p, "status": "OPEN" if p in [80, 443] else "CLOSED"} for p in [80, 443]]
-            logging.info(f"RBAC: Port matrix truncated for {user['name']}")
+            logging.info(f"RBAC: Data truncation applied for Level {user['level']} user: {user['name']}")
 
-        # 2. OS Masking: Students see a generic OS, Admins see TTL/Version details
-        display_os = raw_os if is_admin else raw_os.split('(')[0].strip() + " (Restricted View)"
+        # 2. OS Metadata Masking
+        # Strips technical TTL/Ping data for students to focus on high-level identification
+        display_os = raw_os if is_admin else raw_os.split('(')[0].strip() + " (Protected View)"
 
-        # 3. Vulnerability Masking: Students see only minor insights
+        # 3. Vulnerability Disclosure Masking
         if is_admin:
-            display_headers = raw_headers
+            # Admins see the full audit or a failure notification
+            if header_audit_failed:
+                display_headers = [{"header": "CONNECTION", "status": "TIMEOUT / SHIELDED"}]
+            else:
+                display_headers = raw_headers
         else:
-            # Filter to only show basic headers, hide critical security policy details
+            # Students see non-critical headers only to prevent exploit discovery
             display_headers = [h for h in raw_headers if h['header'] in ['X-Frame-Options', 'Referrer-Policy']]
+            if not display_headers and header_audit_failed:
+                display_headers = [{"header": "AUDIT", "status": "RESTRICTED"}]
 
         return jsonify({
             "operator": user['name'], 
@@ -103,22 +131,26 @@ def start_scan():
             "level": user['level'],
             "target": target, 
             "ip": ip, 
-            "risk_score": raw_risk if is_admin else (raw_risk * 0.7), # Simplified risk for students
+            "risk_score": raw_risk if is_admin else (raw_risk * 0.65), # Adjusted risk weight for students
             "os": display_os,
-            "ssl_audit": raw_ssl if is_admin else {"status": raw_ssl['status'], "protocol": "HIDDEN", "cipher": "HIDDEN"},
+            "ssl_audit": raw_ssl if is_admin else {"status": raw_ssl['status'], "protocol": "MASKED", "cipher": "HIDDEN"},
             "web_audit": {
-                "server_tech": "Hybrid C++/Flask Node" if is_admin else "Masked Infrastructure", 
-                "waf_detected": "Active Defense" if is_admin else "Protected",
+                "server_tech": "Hybrid C++/Python Node" if is_admin else "Protected Infrastructure", 
+                "waf_status": "Detection Active" if is_admin else "Enabled",
                 "security_headers": display_headers
             },
             "image_security": {
                 "firewall": "ACTIVE", 
-                "hardening_score": 95 if len([h for h in raw_headers if h['status'] == 'SECURE']) > 4 else 45
+                "hardening_score": 95 if len([h for h in raw_headers if h['status'] == 'SECURE']) > 4 else 40
             },
             "results": results_matrix
         })
+    except socket.gaierror:
+        return jsonify({"error": f"Failed to resolve hostname: {target}"}), 404
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logging.error(f"Orchestration Failure: {e}")
+        return jsonify({"error": "Internal Orchestration Error"}), 500
 
 if __name__ == '__main__':
+    # Standard SOC port deployment
     app.run(port=5000, host='0.0.0.0')
