@@ -72,7 +72,7 @@ public:
                 FD_ZERO(&set); 
                 FD_SET(sock, &set);
                 tv.tv_sec = 0; 
-                tv.tv_usec = 350000; // 0.35s optimized timeout for speed/reliability
+                tv.tv_usec = 1000000; // 1s timeout for complete port scan
 
                 int res = select(sock + 1, NULL, &set, NULL, &tv);
                 close(sock);
